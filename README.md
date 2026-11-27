@@ -4,6 +4,8 @@ Search, verify, and score Airbnb stays against **your** criteria. CLI-first, Pyt
 
 Unofficial tool — not affiliated with, endorsed by, or connected to Airbnb, Inc.
 
+[![PyPI](https://img.shields.io/pypi/v/bnbingo.svg)](https://pypi.org/project/bnbingo/)
+
 # Features
 
 - Search Airbnb with dates, guests, price, property type, amenities, and neighborhood filters
