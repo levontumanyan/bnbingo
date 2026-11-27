@@ -35,6 +35,8 @@ jobs:
           wheel = glob.glob("dist/bnbingo-*.whl")[0]
           names = zipfile.ZipFile(wheel).namelist()
           assert "bnbingo/amenities.json" in names, names
+          assert "bnbingo/benchmarks.json" in names, names
+          assert "bnbingo/host_review.py" in names, names
           entry = next(n for n in names if n.endswith("entry_points.txt"))
           assert "bnbingo = bnbingo.main:main" in zipfile.ZipFile(wheel).read(entry).decode(), entry
           print(f"Verified {wheel}")
