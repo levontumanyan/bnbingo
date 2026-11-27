@@ -18,14 +18,21 @@ Unofficial tool — not affiliated with, endorsed by, or connected to Airbnb, In
 
 # Install
 
+From PyPI (recommended):
+
+```bash
+uv tool install bnbingo
+bnbingo --help
+```
+
+`uvx bnbingo --help` runs it without installing. Alternatives: `pipx install bnbingo`, or a venv with `python3 -m venv .venv && . .venv/bin/activate && pip install bnbingo`. Prefer a venv or tool installer over a global `pip install`.
+
 From a source checkout:
 
 ```bash
 uv tool install --force .
 bnbingo --help
 ```
-
-Once published to PyPI, the same tool can be installed with `uv tool install bnbingo` (or run ad hoc with `uvx bnbingo`).
 
 For development, use `uv sync` and `uv run bnbingo --help`.
 
@@ -107,6 +114,8 @@ make lint
 make check
 make setup   # install the lint/test pre-commit hook
 ```
+
+Releases are tag-driven via GitHub Actions; see [RELEASING.md](RELEASING.md).
 
 # License
 
