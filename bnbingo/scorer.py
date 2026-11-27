@@ -3,14 +3,10 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Tuple
 
-try:
-	from amenities import evaluate_kitchen, has_amenity
-	from climate import get_climate_profile
-except ImportError:
-	from src.amenities import evaluate_kitchen, has_amenity
-	from src.climate import get_climate_profile
+from .amenities import evaluate_kitchen, has_amenity
+from .climate import get_climate_profile
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 
 class ScoreResult(tuple):

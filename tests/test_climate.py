@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from src.climate import get_climate_profile
+from bnbingo.climate import get_climate_profile
 
 
 def test_get_climate_profile_mocked():
@@ -13,9 +13,9 @@ def test_get_climate_profile_mocked():
 	}
 
 	with (
-		patch("src.climate._load_disk_cache", return_value={}),
-		patch("src.climate._save_disk_cache"),
-		patch("src.climate._MEMORY_CLIMATE_CACHE", {}),
+		patch("bnbingo.climate._load_disk_cache", return_value={}),
+		patch("bnbingo.climate._save_disk_cache"),
+		patch("bnbingo.climate._MEMORY_CLIMATE_CACHE", {}),
 		patch("urllib.request.urlopen") as mock_urlopen,
 	):
 		mock_resp = MagicMock()
@@ -43,9 +43,9 @@ def test_get_climate_profile_hot_climate():
 	}
 
 	with (
-		patch("src.climate._load_disk_cache", return_value={}),
-		patch("src.climate._save_disk_cache"),
-		patch("src.climate._MEMORY_CLIMATE_CACHE", {}),
+		patch("bnbingo.climate._load_disk_cache", return_value={}),
+		patch("bnbingo.climate._save_disk_cache"),
+		patch("bnbingo.climate._MEMORY_CLIMATE_CACHE", {}),
 		patch("urllib.request.urlopen") as mock_urlopen,
 	):
 		mock_resp = MagicMock()
@@ -66,9 +66,9 @@ def test_get_climate_profile_hot_climate():
 
 def test_get_climate_profile_network_fallback():
 	with (
-		patch("src.climate._load_disk_cache", return_value={}),
-		patch("src.climate._save_disk_cache"),
-		patch("src.climate._MEMORY_CLIMATE_CACHE", {}),
+		patch("bnbingo.climate._load_disk_cache", return_value={}),
+		patch("bnbingo.climate._save_disk_cache"),
+		patch("bnbingo.climate._MEMORY_CLIMATE_CACHE", {}),
 		patch("urllib.request.urlopen", side_effect=Exception("Timeout")),
 	):
 		profile = get_climate_profile(

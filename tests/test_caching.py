@@ -3,8 +3,8 @@ import shutil
 
 import pytest
 
-from src.config import TEST_DATA_DIR, TEST_LISTING_ID
-from src.fetcher import get_listing_details
+from bnbingo.config import TEST_DATA_DIR, TEST_LISTING_ID
+from bnbingo.fetcher import get_listing_details
 
 # Path to the real listing JSON we copied for testing
 TEST_LISTING_FILE = TEST_DATA_DIR / f"{TEST_LISTING_ID}.json"
@@ -23,7 +23,7 @@ def mock_cache_env(mocker, tmp_path):
 	shutil.copy(TEST_LISTING_FILE, temp_cache_dir / f"{TEST_LISTING_ID}.json")
 
 	# Mock LISTING_CACHE in fetcher.py to point to our temporary directory
-	mocker.patch("src.fetcher.LISTING_CACHE", temp_cache_dir)
+	mocker.patch("bnbingo.fetcher.LISTING_CACHE", temp_cache_dir)
 
 	return temp_cache_dir
 
@@ -34,7 +34,7 @@ def test_get_listing_details_uses_cache_not_network(mocker, mock_cache_env):
 	does NOT trigger a network call via pyairbnb.get_details.
 	"""
 	# Mock pyairbnb to ensure no network calls are made
-	mock_pyairbnb = mocker.patch("src.fetcher.pyairbnb")
+	mock_pyairbnb = mocker.patch("bnbingo.fetcher.pyairbnb")
 
 	# Load the original test data for comparison
 	with open(TEST_LISTING_FILE, "r") as f:
@@ -61,11 +61,11 @@ def test_get_listing_details_calls_network_when_cache_missing(mocker, tmp_path):
 	empty_cache_dir.mkdir(parents=True, exist_ok=True)
 
 	# Mock LISTING_CACHE
-	mocker.patch("src.fetcher.LISTING_CACHE", empty_cache_dir)
+	mocker.patch("bnbingo.fetcher.LISTING_CACHE", empty_cache_dir)
 
 	# Mock pyairbnb.get_details to return a dummy listing
 	mock_details = {"room_id": "999", "title": "New Listing"}
-	mock_pyairbnb = mocker.patch("src.fetcher.pyairbnb")
+	mock_pyairbnb = mocker.patch("bnbingo.fetcher.pyairbnb")
 	mock_pyairbnb.get_details.return_value = mock_details
 
 	# Call the function with a non-existent ID

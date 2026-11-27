@@ -3,15 +3,11 @@ import logging
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any, Dict, Optional
 
-try:
-	from config import CLIMATE_CACHE
-except ImportError:
-	CLIMATE_CACHE = Path(__file__).parent.parent / ".cache" / "climate.json"
+from .config import CLIMATE_CACHE
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 _MEMORY_CLIMATE_CACHE: Dict[str, Dict[str, Any]] = {}
 

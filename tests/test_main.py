@@ -1,4 +1,4 @@
-from src.main import resolve_price_filters
+from bnbingo.main import resolve_price_filters
 
 
 def test_nightly_is_scaled_by_stay_length():

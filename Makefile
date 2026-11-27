@@ -8,7 +8,7 @@ min_rating ?=
 min_reviews ?=
 
 survey:
-	uv run src/main.py --survey \
+	uv run bnbingo --survey \
 		$(if $(cities),--cities "$(cities)") \
 		$(if $(check_in),--check_in $(check_in)) \
 		$(if $(check_out),--check_out $(check_out)) \

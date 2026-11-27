@@ -16,8 +16,8 @@ import pyairbnb.standardize as standardize
 import pyairbnb.start
 from curl_cffi import requests
 
-from auth import get_brave_cookies
-from config import AIRBNB_COOKIE, CACHE_DIR, LISTING_CACHE
+from .auth import get_brave_cookies
+from .config import AIRBNB_COOKIE, CACHE_DIR, LISTING_CACHE
 
 # api.get: no local patch needed — upstream pyairbnb >=2.2.8 (PR #73) falls back
 # to the public web API key when the homepage parse fails.
@@ -26,7 +26,7 @@ from config import AIRBNB_COOKIE, CACHE_DIR, LISTING_CACHE
 pyairbnb.start.get_calendar = lambda *args, **kwargs: {}
 pyairbnb.start.host_details.get = lambda *args, **kwargs: {}
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 GRAPHQL_HASH_CACHE = CACHE_DIR / "graphql_hashes.json"
 _DEFAULT_GRAPHQL_HASHES = {

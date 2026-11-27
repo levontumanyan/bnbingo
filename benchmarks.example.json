@@ -1,0 +1,74 @@
+{
+	"metrics": {
+		"amenities": {
+			"weight": 0.35,
+			"function": "percentage_match",
+			"params": {
+				"bonus_amenities": [
+					"balcony",
+					"projector",
+					"hammock",
+					"dishwasher"
+				]
+			}
+		},
+		"value": {
+			"weight": 0.25,
+			"function": "market_relative",
+			"params": {
+				"target_ratio": 0.75,
+				"base_ratio": 1.0
+			}
+		},
+		"sentiment": {
+			"weight": 0.4,
+			"function": "keyword_analysis",
+			"params": {
+				"positive_keywords": [
+					"bright",
+					"spacious",
+					"cozy",
+					"luminoso",
+					"tranquilo"
+				],
+				"negative_keywords": [
+					"damp",
+					"smelly",
+					"thin walls",
+					"húmedo",
+					"ruidoso"
+				]
+			}
+		}
+	},
+	"penalties": [
+		{
+			"id": "tiny_bedroom",
+			"name": "Tiny Bedroom",
+			"type": "missing_amenity",
+			"amenity": "dedicated_workspace",
+			"multiplier": 0.8,
+			"flag": "[FLAG: No Workspace]"
+		},
+		{
+			"name": "Low Review Count",
+			"condition": {
+				"field": "review_count",
+				"operator": "<",
+				"value": 7
+			},
+			"multiplier": 0.6
+		}
+	],
+	"hard_filters": {
+		"must_have_amenities": [
+			"wifi",
+			"kitchen"
+		]
+	},
+	"scoring_thresholds": {
+		"excellent": 85,
+		"good": 65,
+		"pass": 45
+	}
+}

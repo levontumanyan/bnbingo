@@ -1,6 +1,6 @@
 import json
 
-from src.fetcher import get_listing_details, search_listings
+from bnbingo.fetcher import get_listing_details, search_listings
 
 
 def test_get_listing_details_cache_hit(mocker, tmp_path):
@@ -16,8 +16,8 @@ def test_get_listing_details_cache_hit(mocker, tmp_path):
 	with open(mock_cache_file, "w") as f:
 		json.dump(mock_details, f)
 
-	mocker.patch("src.fetcher.LISTING_CACHE", mock_listing_cache_dir)
-	mock_pyairbnb = mocker.patch("src.fetcher.pyairbnb")
+	mocker.patch("bnbingo.fetcher.LISTING_CACHE", mock_listing_cache_dir)
+	mock_pyairbnb = mocker.patch("bnbingo.fetcher.pyairbnb")
 
 	details = get_listing_details(listing_id)
 
@@ -46,8 +46,8 @@ def test_get_listing_details_cache_expired(mocker, tmp_path):
 	past_time = time.time() - (48 * 3600)
 	os.utime(mock_cache_file, (past_time, past_time))
 
-	mocker.patch("src.fetcher.LISTING_CACHE", mock_listing_cache_dir)
-	mock_pyairbnb = mocker.patch("src.fetcher.pyairbnb")
+	mocker.patch("bnbingo.fetcher.LISTING_CACHE", mock_listing_cache_dir)
+	mock_pyairbnb = mocker.patch("bnbingo.fetcher.pyairbnb")
 	mock_pyairbnb.get_details.return_value = new_details
 
 	details = get_listing_details(listing_id)
@@ -58,7 +58,7 @@ def test_get_listing_details_cache_expired(mocker, tmp_path):
 
 def test_search_listings_params(mocker):
 	"""Verify search_listings passes correct parameters to pyairbnb."""
-	mock_pyairbnb = mocker.patch("src.fetcher.pyairbnb")
+	mock_pyairbnb = mocker.patch("bnbingo.fetcher.pyairbnb")
 	coords = {"ne_lat": 1, "ne_long": 2, "sw_lat": 3, "sw_long": 4}
 
 	search_listings(
@@ -99,10 +99,10 @@ def test_get_listing_calendar(mocker):
 		}
 	}
 	mock_session.get.return_value = mock_response
-	mocker.patch("src.fetcher._get_session", return_value=mock_session)
+	mocker.patch("bnbingo.fetcher._get_session", return_value=mock_session)
 	mocker.patch("pyairbnb.api.get", return_value="dummy_key")
 
-	from src.fetcher import get_listing_calendar
+	from bnbingo.fetcher import get_listing_calendar
 
 	months = get_listing_calendar("12345", month=11, year=2026, count=1)
 	assert len(months) == 1
@@ -135,18 +135,18 @@ def test_get_listing_calendar_node_response_and_400_retry(mocker):
 		}
 	}
 	mock_session.get.side_effect = [resp_400, resp_200]
-	mocker.patch("src.fetcher._get_session", return_value=mock_session)
+	mocker.patch("bnbingo.fetcher._get_session", return_value=mock_session)
 	mocker.patch("pyairbnb.api.get", return_value="dummy_key")
 	mocker.patch(
-		"src.fetcher._get_operation_hash",
+		"bnbingo.fetcher._get_operation_hash",
 		return_value="old_hash_" + "0" * 55,
 	)
 	mock_refresh = mocker.patch(
-		"src.fetcher._refresh_operation_hash",
+		"bnbingo.fetcher._refresh_operation_hash",
 		return_value="new_hash_" + "1" * 55,
 	)
 
-	from src.fetcher import get_listing_calendar
+	from bnbingo.fetcher import get_listing_calendar
 
 	months = get_listing_calendar("12345", month=1, year=2020, count=1)
 	assert len(months) == 1
@@ -157,7 +157,7 @@ def test_get_listing_calendar_node_response_and_400_retry(mocker):
 
 def test_extract_operation_hash():
 	"""Verify _extract_operation_hash extracts 64-char sha256 operationId."""
-	from src.fetcher import _extract_operation_hash
+	from bnbingo.fetcher import _extract_operation_hash
 
 	sample_js = (
 		"e.default={name:'StaysSearch',type:'query',operationId:'"

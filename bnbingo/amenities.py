@@ -4,7 +4,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 AMENITY_REGISTRY: Dict[str, Dict[str, Any]] = {
 	"ac": {

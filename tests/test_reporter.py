@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from src.reporter import (
+from bnbingo.reporter import (
 	generate_csv_report,
 	generate_json_report,
 	generate_survey_report,
@@ -258,7 +258,7 @@ def test_generate_survey_report(tmp_path):
 
 def test_format_calendar_view():
 	"""Verify format_calendar_view renders grid and open window summaries."""
-	from src.reporter import format_calendar_view
+	from bnbingo.reporter import format_calendar_view
 
 	mock_months = [
 		{

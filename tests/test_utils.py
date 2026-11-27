@@ -1,6 +1,6 @@
 import json
 
-from src.utils import get_city_coords
+from bnbingo.utils import get_city_coords
 
 
 def test_get_city_coords_from_cache(mocker, tmp_path):
@@ -17,10 +17,10 @@ def test_get_city_coords_from_cache(mocker, tmp_path):
 		json.dump(city_data, f)
 
 	# Mock the CITY_CACHE path in utils.py
-	mocker.patch("src.utils.CITY_CACHE", mock_city_cache)
+	mocker.patch("bnbingo.utils.CITY_CACHE", mock_city_cache)
 
 	# Also mock Nominatim just in case it's called (it shouldn't be)
-	mock_geo = mocker.patch("src.utils.Nominatim")
+	mock_geo = mocker.patch("bnbingo.utils.Nominatim")
 
 	coords = get_city_coords("Montreal")
 
@@ -32,7 +32,7 @@ def test_get_city_coords_geocoding_success(mocker, tmp_path):
 	"""Verify coordinates are fetched via geocoding when not in cache."""
 	# Mock empty cache
 	mock_city_cache = tmp_path / "cities.json"
-	mocker.patch("src.utils.CITY_CACHE", mock_city_cache)
+	mocker.patch("bnbingo.utils.CITY_CACHE", mock_city_cache)
 
 	# Mock Nominatim geocoder
 	mock_location = mocker.Mock()
@@ -42,7 +42,7 @@ def test_get_city_coords_geocoding_success(mocker, tmp_path):
 
 	mock_geolocator = mocker.Mock()
 	mock_geolocator.geocode.return_value = mock_location
-	mocker.patch("src.utils.Nominatim", return_value=mock_geolocator)
+	mocker.patch("bnbingo.utils.Nominatim", return_value=mock_geolocator)
 
 	coords = get_city_coords("Montreal")
 

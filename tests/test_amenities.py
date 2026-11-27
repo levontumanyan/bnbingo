@@ -1,6 +1,6 @@
 """Unit tests for the Amenity Registry and Kitchen Evaluation module."""
 
-from src.amenities import (
+from bnbingo.amenities import (
 	evaluate_kitchen,
 	get_search_id,
 	has_amenity,

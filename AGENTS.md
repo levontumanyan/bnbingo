@@ -6,8 +6,9 @@
 
 # Environment & Execution
 
-- **CLI Tool**: The primary way to run searches and benchmark listings is the `airbnb` CLI executable, installed in PATH (`~/.local/bin/airbnb`). Run `airbnb --help` for options.
-- **CLI Reinstall Mandate**: The installed CLI is a snapshot of this repo, not a live link. After committing any change under `airbnb/src/`, run `uv tool install --force ~/repos/agent-tools/airbnb` so agents using `airbnb` execute the updated code; verify with `airbnb --help` or a single `--room` run before reporting results.
+- **CLI Tool**: The primary way to run searches and benchmark listings is the `bnbingo` CLI executable, installed in PATH (`~/.local/bin/bnbingo`). The `airbnb` command in `~/repos/agent-tools/bin/` is a compatibility shim for older workflows. Run `bnbingo --help` for options.
+- **CLI Reinstall Mandate**: The installed CLI is a snapshot of this repo, not a live link. After committing any change under `bnbingo/`, run `uv tool install --force ~/repos/bnbingo` so agents using `bnbingo` execute the updated code; verify with `bnbingo --help` or a single `--room` run before reporting results.
+- **Personal Config**: `search_filters.json` and `benchmarks.json` must never live in this repo — read them from `~/.config/bnbingo` (or `BNBINGO_CONFIG_DIR`); see README for setup from the random example files.
 - **Make Targets**: Use `make` commands strictly for development lifecycle tasks: `make format`, `make lint`, and `make test`. Do not create or use a `make run` target.
 
 # Testing & Validation
@@ -23,12 +24,12 @@
 
 # pyairbnb Upgrades
 
-Local patches in `src/fetcher.py` override the upstream package at import time; upgrades swap the venv package and never clobber them. When upstream absorbs a patch (merged PR), delete the local copy.
+Local patches in `bnbingo/fetcher.py` override the upstream package at import time; upgrades swap the venv package and never clobber them. When upstream absorbs a patch (merged PR), delete the local copy.
 
 1. `uv lock --upgrade-package pyairbnb && uv sync`
 2. `make test` — `tests/test_patch_inventory.py` fails loudly if a local patch stopped applying after the upgrade.
-3. Live smoke: `uv run airbnb --room <id> --check_in YYYY-MM-DD --check_out YYYY-MM-DD` — price and reviews must return.
-4. `uv tool install --force ~/repos/agent-tools/airbnb` — the installed CLI is a snapshot with its own venv.
+3. Live smoke: `uv run bnbingo --room <id> --check_in YYYY-MM-DD --check_out YYYY-MM-DD` — price and reviews must return.
+4. `uv tool install --force ~/repos/bnbingo` — the installed CLI is a snapshot with its own venv.
 
 # Development Workflow Mandates
 

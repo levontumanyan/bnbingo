@@ -15,7 +15,7 @@ This document outlines the testing strategy for the Airbnb Benchmarker project. 
 - **Search Logic:** Mock `pyairbnb.search_all` to verify that `search_listings` correctly formats dates and passes bounding box coordinates.
 
 ## 1.3 `src/config.py`
-- **Path Resolution:** Verify that `ROOT_DIR` correctly identifies the project root and that `BENCHMARKS_PATH` and `CACHE_DIR` are located where expected.
+- **Path Resolution:** Verify that `DATA_DIR` identifies the data root and `CONFIG_DIR` the config root, with `BENCHMARKS_PATH` and `CACHE_DIR` derived from the correct one.
 
 # Integration Tests
 

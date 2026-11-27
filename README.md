@@ -1,184 +1,113 @@
-# Airbnb Benchmarker
+# bnbingo
 
-A Python-based tool to search, scrape, and score Airbnb listings based on custom benchmarks and sentiment analysis of guest reviews.
+Search, verify, and score Airbnb stays against **your** criteria. CLI-first, Python-based, with review sentiment analysis, image-based amenity checks, and exact checkout pricing.
+
+Unofficial tool — not affiliated with, endorsed by, or connected to Airbnb, Inc.
 
 # Features
-- **Search**: Automated search based on price range and location.
-- **Scrape**: Pulls listing descriptions, amenities, and the last 50+ reviews.
-- **Multimodal Scoring**:
-	- Sentiment analysis on reviews (NLP).
-	- Visual verification of amenities via image analysis (LLM).
-- **Custom Benchmarking**: Score listings based on weighted criteria (e.g., cleanliness > price).
 
-# Scoring Methodology
+- Search Airbnb with dates, guests, price, property type, amenities, and neighborhood filters
+- Fetch exact fee-inclusive checkout prices (with a clear warning when Airbnb withholds them)
+- Pull listing details, calendars, and reviews
+- Score listings with weighted metrics, penalties, and hard filters you define
+- Review sentiment analysis, including Spanish noise/cleanliness signals
+- Optional Gemini image verification (is that "workspace" actually a desk?)
+- Verified fast Wi-Fi detection and climate enrichment
+- Multi-city market survey mode for comparing destinations
+- Compact table, CSV, and JSON reports
 
-The scoring system calculates a final score out of 100 based on a two-step process: **Base Scores** and **Penalties**.
+# Install
 
-### 1. Base Score (Metrics)
-Listings are evaluated against a set of configurable metrics (e.g., Amenities, Value, Sentiment). Each metric uses a specific function (like `percentage_match` or `price_to_market_average`) to generate a score from 0-100. This score is then multiplied by its assigned weight. The sum of all weighted metrics forms the Base Score.
+From a source checkout:
 
-$$Base\ Score = \sum (Metric\ Score_i \times Weight_i)$$
+```bash
+uv tool install --force .
+bnbingo --help
+```
 
-### 2. Apply Penalties (Multipliers)
-Penalties are applied to heavily punish listings that fail to meet critical quality thresholds without outright disqualifying them. A penalty acts as a multiplier (e.g., `0.5x`) on the Base Score.
+Once published to PyPI, the same tool can be installed with `uv tool install bnbingo` (or run ad hoc with `uvx bnbingo`).
 
-For example, if a listing achieves a Base Score of 85 but has fewer than 10 reviews, a `0.5` penalty is applied:
-$$Final\ Score = 85 \times 0.5 = 42.5$$
-
-Multiple penalties can stack. For instance, low review count (0.5x) AND low review score (0.5x) would reduce an 85 to 21.25.
+For development, use `uv sync` and `uv run bnbingo --help`.
 
 # Setup
 
-1. Clone the repository.
-2. Install dependencies:
-3. Configure your `.env` with:
-	- `GEMINI_API_KEY`
+Your filters and benchmarks are personal and live **outside this repo**. Only the random example files are tracked here.
+
+Config files are read from `~/.config/bnbingo` (override the directory with `BNBINGO_CONFIG_DIR`):
+
+```bash
+mkdir -p ~/.config/bnbingo
+cp search_filters.example.json ~/.config/bnbingo/search_filters.json
+cp benchmarks.example.json ~/.config/bnbingo/benchmarks.json
+```
+
+Then edit those two files to match your own trip defaults and scoring weights:
+
+- `search_filters.json` — `defaults` (location bounds, dates, guests, price, amenities) and optional `amenity_ids`
+- `benchmarks.json` — `metrics` (weights + scoring functions), `penalties`, `hard_filters`, `scoring_thresholds`
+
+If you manage dotfiles with stow, keep those two files in your **private** dotfiles repo under `.config/bnbingo/` — stow links them into `~/.config/bnbingo` on install, so a fresh machine restores them automatically.
+
+Reports, cache, and logs are separate from config:
+
+- Running from a source checkout: written into the checkout directory
+- Installed tool: `BNBINGO_HOME` if set, otherwise `~/.local/share/bnbingo`
+
+`amenities.json` ships inside the Python package — no setup needed.
+
+Optional credentials:
+
+- `GEMINI_API_KEY` in the environment or a gitignored `.env` in your config directory (enables image verification and LLM sentiment)
+- `AIRBNB_COOKIE` in the environment or `cookies.txt` in your config directory; otherwise `~/.config/airbnb/cookies.txt` is used if present
 
 # Usage
 
 ```bash
-# Default search (Montreal, prices in CAD)
-airbnb
+# Search with your saved defaults
+bnbingo
 
-# Search specific location and price range (CAD)
-airbnb --location "Miraflores, Peru" --min_price 20 --max_price 30
+# Per-night cap, scaled to the stay length
+bnbingo --location "Lisbon, Portugal" --check_in 2027-01-10 --check_out 2027-01-24 --max_nightly 90
 
-# Long stay search with dates and rating filters
-airbnb --location "San Borja, Lima, Peru" --check_in 2026-10-10 --check_out 2026-11-07 --min_price 700 --max_price 1600 --limit 15
+# Whole-stay budget cap, sent as-is
+bnbingo --location "Arequipa, Peru" --check_in 2027-01-11 --check_out 2027-02-08 --max_total 1200
 
-# Whole-stay budget cap (Airbnb applies weekly/monthly discounts before filtering)
-airbnb --location "Arequipa, Peru" --check_in 2026-11-11 --check_out 2026-12-09 --max_total 1200
+# Multi-city survey
+bnbingo --survey --cities "Lima, Peru;Buenos Aires, Argentina" --check_in 2027-03-01 --check_out 2027-03-29
 
-# Per-night cap, auto-scaled to the stay length
-airbnb --location "Arequipa, Peru" --check_in 2026-11-11 --check_out 2026-12-09 --max_nightly 45
+# Inspect one listing
+bnbingo --room 123456789 --calendar --reviews
 
-# Multi-city market survey
-airbnb --survey --cities "Lima, Peru;Santiago, Chile" --check_in 2026-10-10 --check_out 2026-11-07
+# Machine-readable output
+bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json
 ```
 
-# Price Filter Semantics
+`--min_price` / `--max_price` are deprecated aliases for the nightly flags and print a warning.
 
-Airbnb's search API filters on the **whole-stay total** (weekly/monthly discounts and fees included), not the raw nightly rate. The tool sends your price range along with `priceFilterNumNights = <actual nights>`, so Airbnb compares each listing's discounted total for your exact dates against it.
+# Price filter semantics
 
-The unit is in the flag name — no guessing:
+Airbnb's search API applies `price_max` to a whole-stay figure, so nightly caps are multiplied by the number of nights before being sent. In practice Airbnb's server-side filter is loose: listings above the requested cap can still be returned, and the exact price shown in a report includes fees that the filter appears to ignore.
 
-- `--min_total` / `--max_total` — whole-stay budget, sent as-is (discounts applied by Airbnb).
-- `--min_nightly` / `--max_nightly` — per-night rate, multiplied by the stay length before sending.
-- `--min_price` / `--max_price` — **deprecated** aliases for the nightly flags.
-- No price flags — unfiltered.
+Treat price flags as a search hint, not a guarantee — check the reported per-night and total prices, especially before publishing a search as a "budget" result. Enforcing caps client-side on the fetched exact price is planned.
 
-The two families are mutually exclusive. Use `total` flags whenever you have a fixed trip budget; use `nightly` flags to cap the rate regardless of stay length.
+# Reports and cache
 
-# Architecture Overview
+Reports (CSV/JSON), cached listings, and logs live in the data directory (source checkout root, `BNBINGO_HOME`, or `~/.local/share/bnbingo`) and are gitignored. Cookies live in the config directory and are never tracked.
 
-1.  **Extraction**: Use `pyairbnb` to fetch listing metadata and reviews.
-2.  **Scoring Engine**:
-		* **Reviews**: Use an LLM (via Gemini API) or a lexicon-based tool like `vivid_astronaut` to perform sentiment analysis and extract specific features (e.g., "mentions noise," "cleanliness").
-		* **Description/Images**: Use Gemini 1.5 Flash/Pro for multimodal analysis—pass the listing description and image URLs to verify if the "pool" is a kiddie pool or if the "office" is just a kitchen chair.
-3.  **Output**: A sorted list (CSV or JSON) based on a weighted formula of your benchmarks.
+# MCP wrapper (roadmap)
 
----
+The CLI stays the primary interface. If an MCP wrapper is added, it will live in this repo as an optional extra and expose small tools (`search`, `listing_details`, `survey`) that call the library functions directly — not by shelling out to the CLI. Long searches are better suited to a CLI than to blocking MCP tool calls.
 
-# Project TODO List
+# Development
 
-## caching
+```bash
+uv sync
+uv run pytest
+make lint
+make check
+make setup   # install the lint/test pre-commit hook
+```
 
-- are ids the same across different searches. does the same listing have the same id all the time.
-- how do we dump a listing by its id and cache it.
+# License
 
-## Phase 1: Data Acquisitio- [ ] Initialize repository and virtual environment.
-
-- [ ] Implement `pyairbnb` search function to return listing IDs within a price range.
-- [ ] Create a module to fetch full review text and listing descriptions for a given ID.
-- [ ] Handle rate limiting/proxies to avoid IP bans.
-
-## Phase 2: Analysis Engine
-
-- [ ] Integrate Gemini API for text-based sentiment analysis.
-- [ ] Define "Benchmark Weights" (e.g., `Review_Sentiment: 0.5`, `Price_Score: 0.3`, `Amenity_Match: 0.2`).
-- [ ] **Multimodal Step**: Pass listing photo URLs to Gemini to confirm specific requirements (e.g., "Does the desk have an ergonomic chair?").
-
-## Phase 3: Scoring & UI
-
-- [ ] Build the scoring logic $Score = \sum (weight_i \times metric_i)$.
-- [ ] Implement a local storage solution (SQLite or JSON) to cache results.
-- [ ] Create a CLI or simple Streamlit dashboard to display the ranked list.
-
-## Phase 4: Refinement
-
-- [ ] Add "Red Flag" detection (e.g., keywords like "construction," "loud," "smoke").
-- [ ] Export final recommendations to CSV/Excel.
-
-# todo
-
-- [ ] add guest favourite to be heavily encouraged
-- [ ] superhost same
-- [ ] high speed wifi heavilyyyyyyy
-- [ ] Host details
-  - [ ] Response rate: 60% (BAD)
-  - [ ] Responds within a day (BAD)
-- [ ] make sure that network errors do not trip us out.
-- [ ] **Implement Proxy Support**: Add support for `proxy_url` to bypass rate limiting and investigate regional pricing/tax differences.
-	- **Why**: Allows processing 100+ listings without IP bans and lets us see "local" pricing/taxes by appearing in different countries.
-	- **Steps**:
-		1. Add `PROXY_URL` to `.env` and `src/config.py`.
-		2. Add `--proxy` flag to `src/main.py` CLI.
-		3. Update `src/fetcher.py` to pass the proxy to `pyairbnb.search_all` and `pyairbnb.get_details`.
-- [ ] https://github.com/johnbalvin/pyairbnb/tree/main/src/pyairbnb - can you go through the code and make sure that this is not possible to do with pyairbnb before we do it on our side? also document all the available search/filter options and add in `search_filters.example.json`
-
----
-
-# Proposed Libraries
-
-* Data Fetching: pyairbnb or requests (if using RapidAPI).
-* Multimodal AI: google-generativeai (for Gemini 1.5 Pro/Flash to analyze listing photos and review sentiment).
-* Data Validation: pydantic (to ensure listing data matches your scoring schema).
-* Caching: diskcache (to avoid re-scraping the same listing and wasting API credits/time).
-
----
-
-# Rough Project Structure
-
-├── src/
-│   ├── fetcher.py     # Logic to search and get listing details/photos
-│   ├── main.py        # CLI entry point
-│   ├── config.py      # Env vars and path constants
-│   ├── utils.py       # Image downloading and caching helpers
-│   └── scorer.py      # LLM prompts and scoring math (planned)
-├── benchmarks.json    # User-defined weights and "must-haves"
-├── Makefile           # Standard commands (test, lint, run)
-└── pyproject.toml
-
-# Scoring & Benchmarking Logic
-
-I suggest a weighted scoring system stored in your benchmarks.json. This allows you to tune your "ideal" apartment:
-
-- Sentiment: (NLP/LLM)
-  - Reviews must not mention 'noise' or 'loud' more than twice.
-- Visuals: Gemini Vision
-  - Verify 'dedicated workspace' actually has an ergonomic chair.
-Amenities: Boolean Check
-  - Must have: AC, High-speed Wifi, Self check-in.
-- Value: Math
-  - (Price / Average Price in Area) * Weight
-
-# Geocoding
-
-1. Geocoding: We can pass any city name (e.g., --location "Toronto"), and it will find the coordinates through geopy.
-2. City Cache: It saves coordinates to .cache/cities.json to avoid repeating the geocoding call.
-3. Listing Cache: Detailed listing data is stored in .cache/listings/ for 24 hours.
-4. Batch Processing: We are now searching and summarizing the top 5 listings in a city.
-
-# Technical Note: Scoring Logic
-
-To normalize your scoring, you can use a min-max scaling approach for price while using a -1 to 1 sentiment scale for reviews:
-
-$$Final\ Score = (W_s \cdot S_{rev}) + (W_p \cdot \frac{P_{max} - P_{curr}}{P_{max} - P_{min}}) + (W_a \cdot A_{match})$$
-
-Where:
-* $W$: Weights for Sentiment, Price, and Amenities.
-* $S_{rev}$: Average sentiment score of reviews.
-* $P$: Price values.
-* $A_{match}$: Boolean/Ratio of required amenities found.
-
-Would you like the Python boilerplate to handle the `pyairbnb` search and review extraction first?
+MIT — see `LICENSE`.

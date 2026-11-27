@@ -1,4 +1,4 @@
-from src.main import _format_coords, compact_listing
+from bnbingo.main import _format_coords, compact_listing
 
 
 def test_compact_listing_drops_verbose_fields_and_keeps_coordinates():

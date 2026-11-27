@@ -1,26 +1,24 @@
 {
-	"place_type": "Entire home/apt",
-	"check_in": "2026-05-01",
-	"check_out": "2026-05-05",
-	"ne_lat": 40.73061,
-	"ne_long": -73.935242,
-	"sw_lat": 40.712776,
-	"sw_long": -74.005974,
-	"zoom_value": 12,
-	"price_min": 0,
-	"price_max": 200,
-	"amenities": [
-		4,
-		7,
-		8
-	],
-	"free_cancellation": true,
-	"adults": 1,
-	"children": 0,
-	"infants": 0,
-	"min_bedrooms": 1,
-	"min_beds": 1,
-	"min_bathrooms": 1,
-	"currency": "CAD",
-	"language": "en"
+	"defaults": {
+		"place_type": "Entire home/apt",
+		"currency": "CAD",
+		"language": "en",
+		"check_in": "2027-05-03",
+		"check_out": "2027-05-17",
+		"zoom_value": 11,
+		"ne_lat": -39.8142,
+		"ne_long": -73.1987,
+		"sw_lat": -39.8341,
+		"sw_long": -73.2763,
+		"price_min": 45,
+		"price_max": 120,
+		"amenities": [2, 9, 15],
+		"free_cancellation": false,
+		"adults": 2,
+		"children": 0,
+		"infants": 0,
+		"min_bedrooms": 1,
+		"min_beds": 1,
+		"min_bathrooms": 1
+	}
 }

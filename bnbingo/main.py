@@ -7,16 +7,16 @@ import sys
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-from amenities import get_search_id
-from config import REPORTS_DIR
-from fetcher import search_listings
-from reporter import (
+from .amenities import get_search_id
+from .config import REPORTS_DIR
+from .fetcher import search_listings
+from .reporter import (
 	generate_csv_report,
 	generate_json_report,
 	generate_survey_report,
 )
-from scorer import Scorer
-from utils import (
+from .scorer import Scorer
+from .utils import (
 	check_internet_connection,
 	get_city_coords,
 	load_amenity_map,
@@ -432,12 +432,12 @@ def main():
 		sys.exit(1)
 
 	if args.cookie:
-		from fetcher import set_session_cookie
+		from .fetcher import set_session_cookie
 
 		set_session_cookie(args.cookie)
 
 	if args.room:
-		from fetcher import get_listing_details
+		from .fetcher import get_listing_details
 
 		m_room = re.search(r"(?:rooms/)?(\d{6,})", str(args.room))
 		room_id = m_room.group(1) if m_room else str(args.room).strip()
@@ -580,7 +580,7 @@ def main():
 
 		cal_data = None
 		if args.calendar:
-			from fetcher import get_listing_calendar
+			from .fetcher import get_listing_calendar
 
 			start_month = None
 			start_year = None
@@ -744,7 +744,7 @@ def main():
 					)
 					print(f"{idx}. [{meta}] {rev['comment']}")
 			if args.calendar and cal_data:
-				from reporter import format_calendar_view
+				from .reporter import format_calendar_view
 
 				print("\n## Availability Calendar")
 				print(format_calendar_view(cal_data))
@@ -969,7 +969,7 @@ def main():
 	if not args.json:
 		print(f"\nFetching and scoring {len(listing_ids)} listings in parallel...")
 
-	from fetcher import batch_get_listing_details
+	from .fetcher import batch_get_listing_details
 
 	all_details = batch_get_listing_details(
 		listing_ids,
@@ -1121,7 +1121,7 @@ def main():
 			}
 			print(json.dumps(output_payload, indent=2))
 		else:
-			from reporter import _format_date_human
+			from .reporter import _format_date_human
 
 			print(f"\nLocation: {args.location}")
 			human_range = f"{_format_date_human(args.check_in)} to {_format_date_human(args.check_out)}"

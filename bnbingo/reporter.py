@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 
 def _format_date_human(date_str):

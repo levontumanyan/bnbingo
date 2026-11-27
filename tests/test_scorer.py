@@ -1,6 +1,6 @@
 import pytest
 
-from src.scorer import Scorer
+from bnbingo.scorer import Scorer
 
 
 @pytest.fixture

@@ -1,14 +1,26 @@
-from src.config import BENCHMARKS_PATH, CACHE_DIR, ROOT_DIR
+from bnbingo.config import (
+	AMENITIES_PATH,
+	BENCHMARKS_PATH,
+	CACHE_DIR,
+	CONFIG_DIR,
+	DATA_DIR,
+)
 
 
-def test_root_dir_resolution():
-	"""Verify that ROOT_DIR points to the project root (parent of src)."""
-	assert ROOT_DIR.exists()
-	assert (ROOT_DIR / "src").exists()
-	assert (ROOT_DIR / "src" / "config.py").exists()
+def test_data_dir_resolution():
+	"""Verify that DATA_DIR points to the source root when running from source."""
+	assert DATA_DIR.exists()
+	assert (DATA_DIR / "pyproject.toml").exists()
+	assert (DATA_DIR / "bnbingo").exists()
 
 
 def test_config_paths():
-	"""Verify that secondary paths are correctly derived from ROOT_DIR."""
-	assert BENCHMARKS_PATH == ROOT_DIR / "benchmarks.json"
-	assert CACHE_DIR == ROOT_DIR / ".cache"
+	"""Verify that configs live in CONFIG_DIR, separate from data."""
+	assert BENCHMARKS_PATH == CONFIG_DIR / "benchmarks.json"
+	assert CACHE_DIR == DATA_DIR / ".cache"
+
+
+def test_amenities_ship_with_package():
+	"""Amenity mappings must live inside the package for installed use."""
+	assert AMENITIES_PATH.exists()
+	assert AMENITIES_PATH.parent.name == "bnbingo"

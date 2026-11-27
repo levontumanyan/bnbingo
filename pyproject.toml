@@ -3,8 +3,10 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "airbnb"
+name = "bnbingo"
 version = "0.1.0"
+description = "Search, verify, and score Airbnb stays against your own criteria"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
 	"pyairbnb>=2.2.9",
@@ -15,14 +17,15 @@ dependencies = [
 ]
 
 [project.scripts]
-airbnb = "main:main"
+bnbingo = "bnbingo.main:main"
 
 [tool.setuptools]
-py-modules = ["amenities", "auth", "climate", "config", "fetcher", "main", "reporter", "scorer", "utils"]
-package-dir = {"" = "src"}
+packages = ["bnbingo"]
+
+[tool.setuptools.package-data]
+bnbingo = ["amenities.json"]
 
 [tool.ruff]
-# Target version for your Python environment
 target-version = "py311"
 
 [tool.ruff.format]
@@ -30,13 +33,10 @@ indent-style = "tab"
 quote-style = "double"
 
 [tool.ruff.lint]
-# Enable Pyflakes (F), Error (E), and Implicit String Concatenation (ISC)
 select = ["F", "E", "ISC", "I"]
-# E501 is the "Line too long" rule. Adding it here kills the warning.
 ignore = ["E501"]
 
 [tool.ruff.lint.flake8-implicit-str-concat]
-# Ensure it catches multi-line implicit concatenations
 allow-multiline = false
 
 [lint.isort]
@@ -52,4 +52,4 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-pythonpath = ["src"]
+pythonpath = ["."]

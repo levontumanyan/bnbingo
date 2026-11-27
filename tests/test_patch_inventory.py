@@ -15,7 +15,7 @@ import pyairbnb.api
 import pyairbnb.price
 import pyairbnb.start
 
-import src.fetcher as fetcher
+import bnbingo.fetcher as fetcher
 
 
 def test_api_get_runs_pure_upstream():

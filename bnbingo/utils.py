@@ -7,7 +7,7 @@ from pathlib import Path
 
 from geopy.geocoders import Nominatim
 
-from config import (
+from .config import (
 	AMENITIES_PATH,
 	BENCHMARKS_PATH,
 	CITY_CACHE,
@@ -15,7 +15,7 @@ from config import (
 	SEARCH_FILTERS_PATH,
 )
 
-logger = logging.getLogger("airbnb")
+logger = logging.getLogger("bnbingo")
 
 
 def setup_logging(level=logging.WARNING, stream=sys.stdout):
@@ -38,7 +38,7 @@ def setup_logging(level=logging.WARNING, stream=sys.stdout):
 	logger.addHandler(console_handler)
 
 	# File Handler (fall back to /tmp, or skip if filesystem is read-only)
-	for log_path in (LOG_FILE, Path(tempfile.gettempdir()) / "airbnb-app.log"):
+	for log_path in (LOG_FILE, Path(tempfile.gettempdir()) / "bnbingo-app.log"):
 		try:
 			log_path.parent.mkdir(parents=True, exist_ok=True)
 			file_handler = logging.FileHandler(log_path)
