@@ -21,9 +21,11 @@ from .utils import (
 	get_city_coords,
 	load_amenity_map,
 	load_benchmarks,
-	load_search_filters,
 	setup_logging,
 )
+
+DEFAULT_CURRENCY = "CAD"
+DEFAULT_ZOOM = 12
 
 
 def resolve_price_filters(min_nightly, max_nightly, min_total, max_total, num_nights):
@@ -81,7 +83,7 @@ def parse_cities(raw):
 	return paired
 
 
-def run_survey(args, defaults, search_amenities, logger):
+def run_survey(args, search_amenities, logger):
 	raw_cities = parse_cities(args.cities)
 	if not raw_cities:
 		logger.error("No cities provided for survey.")
@@ -120,9 +122,10 @@ def run_survey(args, defaults, search_amenities, logger):
 			currency=args.currency,
 			place_type=args.place_type,
 			amenities=search_amenities if search_amenities else None,
-			language=defaults.get("language", "en"),
-			free_cancellation=defaults.get("free_cancellation", False),
-			zoom_value=defaults.get("zoom_value", 12),
+			language=args.language,
+			free_cancellation=args.free_cancellation,
+			zoom_value=DEFAULT_ZOOM,
+			complete=args.complete,
 		)
 
 		prices = []
@@ -247,24 +250,39 @@ def _format_coords(coords):
 		return "-"
 
 
-def main():
-	# Load search defaults
-	filters = load_search_filters()
-	defaults = filters.get("defaults", {})
+def _load_scoring_policy(args, amenity_map):
+	"""Load benchmarks (flag path > config-dir override > packaged default) and
+	derive the amenity search IDs from hard filters plus --amenities."""
+	try:
+		benchmarks = load_benchmarks(args.benchmarks)
+	except (FileNotFoundError, ValueError) as e:
+		raise SystemExit(f"Error: {e}")
 
-	# Load amenity mappings (flattened)
-	amenity_map = load_amenity_map()
-
-	# Load benchmarks to get "must_haves"
-	benchmarks = load_benchmarks()
 	must_haves = benchmarks.get("hard_filters", {}).get("must_have_amenities", [])
 
-	# Map human-readable must_haves to pyairbnb IDs
 	search_amenities = []
 	for amenity in must_haves:
 		sid = get_search_id(amenity) or amenity_map.get(amenity)
 		if sid:
 			search_amenities.append(sid)
+
+	for name in [a.strip() for a in (args.amenities or "").split(",") if a.strip()]:
+		sid = (
+			int(name)
+			if name.isdigit()
+			else get_search_id(name) or amenity_map.get(name)
+		)
+		if not sid:
+			print(f"Warning: ignoring unknown amenity '{name}'", file=sys.stderr)
+		elif sid not in search_amenities:
+			search_amenities.append(sid)
+
+	return benchmarks, search_amenities
+
+
+def main():
+	# Load amenity mappings (flattened)
+	amenity_map = load_amenity_map()
 
 	parser = argparse.ArgumentParser(
 		description="Airbnb Benchmarker - Search and Score Listings"
@@ -314,26 +332,55 @@ def main():
 	parser.add_argument(
 		"--check_in",
 		type=str,
-		default=defaults.get("check_in"),
-		help="Check-in date (YYYY-MM-DD)",
+		default=None,
+		help="Check-in date (YYYY-MM-DD); required for all modes (a --room URL may carry them)",
 	)
 	parser.add_argument(
 		"--check_out",
 		type=str,
-		default=defaults.get("check_out"),
-		help="Check-out date (YYYY-MM-DD)",
+		default=None,
+		help="Check-out date (YYYY-MM-DD); required for all modes (a --room URL may carry them)",
 	)
 	parser.add_argument(
 		"--place_type",
 		type=str,
-		default=defaults.get("place_type"),
+		default=None,
 		help="Type of place (e.g., 'Entire home/apt', 'Private room')",
 	)
 	parser.add_argument(
 		"--currency",
 		type=str,
-		default=defaults.get("currency", "CAD"),
-		help="Currency code (only CAD is supported; standards mandate CAD on airbnb.ca)",
+		default=DEFAULT_CURRENCY,
+		help="Currency code for all prices (default: CAD)",
+	)
+	parser.add_argument(
+		"--language",
+		type=str,
+		default="en",
+		help="Language for Airbnb search results (default: en)",
+	)
+	parser.add_argument(
+		"--free_cancellation",
+		"--free-cancellation",
+		action="store_true",
+		help="Only listings offering free cancellation",
+	)
+	parser.add_argument(
+		"--amenities",
+		type=str,
+		default=None,
+		help="Comma-separated must-have amenities (names like 'wifi,kitchen' or numeric Airbnb filter IDs), added to the benchmarks hard filters",
+	)
+	parser.add_argument(
+		"--complete",
+		action="store_true",
+		help="Exhaustive search: subdivide the city bounding box until every page fits (slower; avoids Airbnb's page-cap truncation)",
+	)
+	parser.add_argument(
+		"--benchmarks",
+		type=str,
+		default=None,
+		help="Path to a benchmarks.json scoring policy (default: ~/.config/bnbingo/benchmarks.json if present, else the packaged default)",
 	)
 	parser.add_argument(
 		"--limit",
@@ -460,17 +507,6 @@ def main():
 		if args.max_nightly is None:
 			args.max_nightly = args.max_price
 
-	# Criteria guardrail (airbnb/AGENTS.md + travel/criteria.md): all prices must
-	# be evaluated in CAD on airbnb.ca so totals match the listing pages the user
-	# sees. Passing --currency with anything else produced totals in another
-	# currency that silently mismatched the pages, so it is rejected outright.
-	# Passing --currency CAD explicitly remains valid.
-	if str(args.currency).upper() != "CAD":
-		sys.stderr.write(
-			f"Error: currency '{args.currency}' is not supported by this tool. All prices are evaluated in CAD on airbnb.ca by standard (travel/criteria.md, airbnb/AGENTS.md) so reported totals match the listing page prices the user sees. Do not override the currency: rerun without --currency or with --currency CAD.\n"
-		)
-		sys.exit(2)
-
 	# Configure logging (redirect to stderr when --json is used so stdout stays clean)
 	log_level = logging.INFO if args.verbose else logging.WARNING
 	log_stream = sys.stderr if args.json else sys.stdout
@@ -486,6 +522,14 @@ def main():
 		from .fetcher import set_session_cookie
 
 		set_session_cookie(args.cookie)
+
+	benchmarks, search_amenities = _load_scoring_policy(args, amenity_map)
+
+	def require_dates():
+		if not args.check_in or not args.check_out:
+			parser.error(
+				"--check_in and --check_out are required (pass them explicitly, or use a --room URL that includes them)"
+			)
 
 	if args.room:
 		from .fetcher import get_listing_details
@@ -548,6 +592,7 @@ def main():
 				except Exception:
 					pass
 
+		require_dates()
 		d1 = datetime.strptime(args.check_in, "%Y-%m-%d")
 		d2 = datetime.strptime(args.check_out, "%Y-%m-%d")
 		num_nights = max(1, (d2 - d1).days)
@@ -805,8 +850,9 @@ def main():
 				)
 		return
 
+	require_dates()
 	if args.survey:
-		run_survey(args, defaults, search_amenities, logger)
+		run_survey(args, search_amenities, logger)
 		return
 
 	coords = get_city_coords(args.location)
@@ -854,10 +900,11 @@ def main():
 		currency=args.currency,
 		place_type=args.place_type,
 		amenities=search_amenities if search_amenities else None,
-		language=defaults.get("language", "en"),
-		free_cancellation=defaults.get("free_cancellation", False),
-		zoom_value=defaults.get("zoom_value", 15),
+		language=args.language,
+		free_cancellation=args.free_cancellation,
+		zoom_value=DEFAULT_ZOOM,
 		adults=args.max_guests or 1,
+		complete=args.complete,
 	)
 
 	logger.info(f"Found {len(listings)} total listings.")

@@ -11,8 +11,8 @@ from .config import (
 	AMENITIES_PATH,
 	BENCHMARKS_PATH,
 	CITY_CACHE,
+	DEFAULT_BENCHMARKS_PATH,
 	LOG_FILE,
-	SEARCH_FILTERS_PATH,
 )
 
 logger = logging.getLogger("bnbingo")
@@ -71,32 +71,33 @@ def load_amenity_map():
 			return {}
 
 
-def load_benchmarks():
+def load_benchmarks(path=None):
 	"""
-	Loads benchmarks from benchmarks.json.
+	Loads the scoring policy: an explicit --benchmarks path, then the config-dir
+	override, then the packaged default. Malformed JSON raises instead of
+	silently scoring everything as zero.
 	"""
-	if not BENCHMARKS_PATH.exists():
-		return {}
+	candidates = (
+		[Path(path).expanduser()]
+		if path
+		else [BENCHMARKS_PATH, DEFAULT_BENCHMARKS_PATH]
+	)
 
-	with open(BENCHMARKS_PATH, "r") as f:
-		try:
-			return json.load(f)
-		except json.JSONDecodeError:
-			return {}
+	for candidate in candidates:
+		if not candidate.exists():
+			if path:
+				raise FileNotFoundError(f"Benchmarks file not found: {candidate}")
+			continue
 
+		with open(candidate, "r", encoding="utf-8") as f:
+			try:
+				return json.load(f)
+			except json.JSONDecodeError as e:
+				raise ValueError(
+					f"Malformed benchmarks JSON in {candidate}: {e}"
+				) from e
 
-def load_search_filters():
-	"""
-	Loads search filters from search_filters.json.
-	"""
-	if not SEARCH_FILTERS_PATH.exists():
-		return {"defaults": {}, "amenity_ids": {}}
-
-	with open(SEARCH_FILTERS_PATH, "r") as f:
-		try:
-			return json.load(f)
-		except json.JSONDecodeError:
-			return {"defaults": {}, "amenity_ids": {}}
+	raise FileNotFoundError("No usable benchmarks file found")
 
 
 def get_city_coords(city_name):

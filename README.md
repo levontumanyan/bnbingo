@@ -38,29 +38,23 @@ For development, use `uv sync` and `uv run bnbingo --help`.
 
 # Setup
 
-Your filters and benchmarks are personal and live **outside this repo**. Only the random example files are tracked here.
+No config file is required: every search knob is a CLI flag, and scoring uses a packaged default `benchmarks.json` that ships inside the wheel.
 
-Config files are read from `~/.config/bnbingo` (override the directory with `BNBINGO_CONFIG_DIR`):
+To customize scoring (weights, penalties, hard filters), either:
 
-```bash
-mkdir -p ~/.config/bnbingo
-cp search_filters.example.json ~/.config/bnbingo/search_filters.json
-cp benchmarks.example.json ~/.config/bnbingo/benchmarks.json
-```
+- put your own `benchmarks.json` in `~/.config/bnbingo/` (override the directory with `BNBINGO_CONFIG_DIR`), or
+- pass any file explicitly with `--benchmarks PATH`.
 
-Then edit those two files to match your own trip defaults and scoring weights:
+Resolution order is `--benchmarks PATH`, then the config-dir file, then the packaged default. A malformed or missing `--benchmarks` file fails loudly — it never silently scores listings as zero. If you manage dotfiles with stow, keep your personal `benchmarks.json` in your **private** dotfiles repo under `.config/bnbingo/`.
 
-- `search_filters.json` — `defaults` (location bounds, dates, guests, price, amenities) and optional `amenity_ids`
-- `benchmarks.json` — `metrics` (weights + scoring functions), `penalties`, `hard_filters`, `scoring_thresholds`
-
-If you manage dotfiles with stow, keep those two files in your **private** dotfiles repo under `.config/bnbingo/` — stow links them into `~/.config/bnbingo` on install, so a fresh machine restores them automatically.
+All prices default to CAD on airbnb.ca; pass `--currency` to override. `--check_in` and `--check_out` are required for every mode (a `--room` URL may carry them).
 
 Reports, cache, and logs are separate from config:
 
 - Running from a source checkout: written into the checkout directory
 - Installed tool: `BNBINGO_HOME` if set, otherwise `~/.local/share/bnbingo`
 
-`amenities.json` ships inside the Python package — no setup needed.
+`amenities.json` and the default `benchmarks.json` ship inside the Python package — no setup needed.
 
 Optional credentials:
 
@@ -70,8 +64,8 @@ Optional credentials:
 # Usage
 
 ```bash
-# Search with your saved defaults
-bnbingo
+# Search a city
+bnbingo --location "Lisbon, Portugal" --check_in 2027-01-10 --check_out 2027-01-24
 
 # Per-night cap, scaled to the stay length
 bnbingo --location "Lisbon, Portugal" --check_in 2027-01-10 --check_out 2027-01-24 --max_nightly 90
@@ -79,17 +73,24 @@ bnbingo --location "Lisbon, Portugal" --check_in 2027-01-10 --check_out 2027-01-
 # Whole-stay budget cap, sent as-is
 bnbingo --location "Arequipa, Peru" --check_in 2027-01-11 --check_out 2027-02-08 --max_total 1200
 
+# Must-have amenities beyond the benchmarks hard filters
+bnbingo --location "Valdivia, Chile" --check_in 2027-05-03 --check_out 2027-05-17 --amenities "wifi,kitchen"
+
 # Multi-city survey (separate cities with ';'; commas inside city names are kept)
 bnbingo --survey --cities "Lima, Peru;Buenos Aires, Argentina" --check_in 2027-03-01 --check_out 2027-03-29
 
 # Inspect one listing
-bnbingo --room 123456789 --calendar --reviews
+bnbingo --room 123456789 --calendar --reviews --check_in 2027-01-10 --check_out 2027-01-24
 
-# Machine-readable output
-bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json
+# Machine-readable output with an explicit scoring policy
+bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json --benchmarks ~/my-benchmarks.json
 ```
 
 `--min_price` / `--max_price` are deprecated aliases for the nightly flags and print a warning.
+
+# Search completeness
+
+A city search geocodes the city name to its administrative bounding box and pages through every listing inside it. Airbnb caps the number of pages it will serve per query, so in dense markets the sweep stops early (`SearchResultsTruncatedWarning`) and listings in any neighborhood — not a specific one — can be missed. Pass `--complete` to subdivide the bounding box until every page fits; it is slower and uses many more requests, but avoids the cap. If the subdivision budget is exhausted, the partial results are still returned with a warning.
 
 # Price filter semantics
 

@@ -6,9 +6,9 @@
 
 # Environment & Execution
 
-- **CLI Tool**: The primary way to run searches and benchmark listings is the `bnbingo` CLI executable, installed in PATH (`~/.local/bin/bnbingo`). The `airbnb` command in `~/repos/agent-tools/bin/` is a compatibility shim for older workflows. Run `bnbingo --help` for options.
+- **CLI Tool**: The primary way to run searches and benchmark listings is the `bnbingo` CLI executable, installed in PATH (`~/.local/bin/bnbingo`). Run `bnbingo --help` for options.
 - **CLI Reinstall Mandate**: The installed CLI is a snapshot of this repo, not a live link. After committing any change under `bnbingo/`, run `uv tool install --force ~/repos/bnbingo` so agents using `bnbingo` execute the updated code; verify with `bnbingo --help` or a single `--room` run before reporting results.
-- **Personal Config**: `search_filters.json` and `benchmarks.json` must never live in this repo — read them from `~/.config/bnbingo` (or `BNBINGO_CONFIG_DIR`); see README for setup from the random example files.
+- **Scoring Policy**: Benchmarks load from an explicit `--benchmarks PATH`, then `~/.config/bnbingo/benchmarks.json` (`BNBINGO_CONFIG_DIR`), then the packaged default (`bnbingo/benchmarks.json`). A personal `benchmarks.json` must never live in this repo. There is no search-filters config: every search knob is a CLI flag.
 - **Make Targets**: Use `make` commands strictly for development lifecycle tasks: `make format`, `make lint`, and `make test`. Do not create or use a `make run` target.
 
 # Testing & Validation
@@ -17,7 +17,7 @@
 
 # Currency & Domain Standards
 
-- **Primary Currency**: **ALWAYS** evaluate, search, and report Airbnb prices in **CAD** unless the user explicitly requests otherwise.
+- **Primary Currency**: Evaluate, search, and report Airbnb prices in **CAD** by default (`--currency` overrides it; the user's standards still mandate CAD on airbnb.ca).
 - **Listing URLs**: Anytime you mention an Airbnb to the user, embed the full `airbnb.ca` link (`https://www.airbnb.ca/rooms/<id>`) with the dates pre-selected (`?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD&adults=1`).
 - **Nightly Rate Requirement**: **ALWAYS** explicitly output and report the nightly rate (e.g. CAD $XX.XX/night or /nt) alongside total prices in CLI outputs and agent summaries, whether presenting a single listing or multiple listings.
 - **Visitor Policy**: **ALWAYS** flag listings whose house rules explicitly ban visitors (e.g. "no visitors", "only registered guests may enter") — the user wants to bring an occasional date over.

@@ -1,9 +1,12 @@
+import json
+
 from bnbingo.config import (
 	AMENITIES_PATH,
 	BENCHMARKS_PATH,
 	CACHE_DIR,
 	CONFIG_DIR,
 	DATA_DIR,
+	DEFAULT_BENCHMARKS_PATH,
 )
 
 
@@ -24,3 +27,12 @@ def test_amenities_ship_with_package():
 	"""Amenity mappings must live inside the package for installed use."""
 	assert AMENITIES_PATH.exists()
 	assert AMENITIES_PATH.parent.name == "bnbingo"
+
+
+def test_default_benchmarks_ship_with_package():
+	"""A valid default scoring policy must ship inside the package."""
+	assert DEFAULT_BENCHMARKS_PATH.parent.name == "bnbingo"
+	with open(DEFAULT_BENCHMARKS_PATH) as f:
+		policy = json.load(f)
+	assert policy["metrics"]
+	assert "hard_filters" in policy

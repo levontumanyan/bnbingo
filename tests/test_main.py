@@ -90,6 +90,9 @@ def test_survey_enforces_price_cap(monkeypatch):
 		check_in="2027-01-10",
 		check_out="2027-01-24",
 		currency="CAD",
+		language="en",
+		free_cancellation=False,
+		complete=False,
 		place_type="Entire home/apt",
 		json=False,
 		min_rating=4.7,
@@ -99,6 +102,22 @@ def test_survey_enforces_price_cap(monkeypatch):
 		min_total=None,
 		max_total=200,
 	)
-	run_survey(args, {}, [], logging.getLogger("bnbingo-test"))
+	run_survey(args, [], logging.getLogger("bnbingo-test"))
 	assert captured["results"][0]["total_found"] == 1
 	assert captured["results"][0]["median_total"] == 100
+
+
+def test_load_scoring_policy_amenity_flag():
+	from types import SimpleNamespace as NS
+
+	from bnbingo.main import _load_scoring_policy
+	from bnbingo.utils import load_amenity_map
+
+	amenity_map = load_amenity_map()
+	args = NS(benchmarks=None, amenities="wifi,kitchen,25")
+	_, search_amenities = _load_scoring_policy(args, amenity_map)
+
+	assert amenity_map.get("wifi") in search_amenities
+	assert amenity_map.get("kitchen") in search_amenities
+	assert 25 in search_amenities
+	assert len(search_amenities) == len(set(search_amenities))

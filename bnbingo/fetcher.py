@@ -424,8 +424,9 @@ def search_listings(
 	amenities=None,
 	language="en",
 	free_cancellation=False,
-	zoom_value=15,
+	zoom_value=12,
 	adults=1,
+	complete=False,
 ):
 	"""
 	Search for Airbnb listings within a bounding box using pyairbnb.search_all.
@@ -451,12 +452,18 @@ def search_listings(
 		"language": language,
 		"free_cancellation": free_cancellation,
 		"adults": adults,
+		"complete": complete,
 		"hash": _get_operation_hash("StaysSearch"),
 	}
 
 	try:
 		try:
 			results = pyairbnb.search_all(**search_kwargs)
+		except pyairbnb.SearchCoverageError as e:
+			logger.warning(
+				f"Complete search budget exhausted; returning {len(e.results)} partial results: {e}"
+			)
+			return e.results
 		except Exception as e:
 			if "400" in str(e):
 				search_kwargs["hash"] = _refresh_operation_hash("StaysSearch")

@@ -38,6 +38,13 @@ dev = [
 [tool.hatch.version]
 path = "bnbingo/__init__.py"
 
+[tool.hatch.build.targets.wheel]
+# .gitignore excludes benchmarks.json; force-ship the packaged default.
+artifacts = ["bnbingo/benchmarks.json"]
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["bnbingo/benchmarks.json"]
+
 [tool.ruff]
 target-version = "py311"
 

@@ -1,6 +1,8 @@
 import json
 
-from bnbingo.utils import get_city_coords
+import pytest
+
+from bnbingo.utils import get_city_coords, load_benchmarks
 
 
 def test_get_city_coords_from_cache(mocker, tmp_path):
@@ -55,3 +57,28 @@ def test_get_city_coords_geocoding_success(mocker, tmp_path):
 	with open(mock_city_cache, "r") as f:
 		cache_data = json.load(f)
 		assert "Montreal" in cache_data
+
+
+def test_load_benchmarks_explicit_path(tmp_path):
+	policy = {"metrics": {}, "hard_filters": {"must_have_amenities": ["wifi"]}}
+	p = tmp_path / "benchmarks.json"
+	p.write_text(json.dumps(policy))
+	assert load_benchmarks(str(p)) == policy
+
+
+def test_load_benchmarks_missing_explicit_path_fails_loudly(tmp_path):
+	with pytest.raises(FileNotFoundError):
+		load_benchmarks(str(tmp_path / "nope.json"))
+
+
+def test_load_benchmarks_malformed_json_fails_loudly(tmp_path):
+	p = tmp_path / "benchmarks.json"
+	p.write_text("{not json")
+	with pytest.raises(ValueError, match="Malformed benchmarks JSON"):
+		load_benchmarks(str(p))
+
+
+def test_load_benchmarks_falls_back_to_packaged_default(mocker, tmp_path):
+	mocker.patch("bnbingo.utils.BENCHMARKS_PATH", tmp_path / "absent.json")
+	policy = load_benchmarks()
+	assert policy["metrics"]

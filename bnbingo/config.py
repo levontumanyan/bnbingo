@@ -23,7 +23,7 @@ CONFIG_DIR = Path(
 ).expanduser()
 
 BENCHMARKS_PATH = CONFIG_DIR / "benchmarks.json"
-SEARCH_FILTERS_PATH = CONFIG_DIR / "search_filters.json"
+DEFAULT_BENCHMARKS_PATH = PACKAGE_DIR / "benchmarks.json"
 AMENITIES_PATH = PACKAGE_DIR / "amenities.json"
 
 CACHE_DIR = DATA_DIR / ".cache"
