@@ -27,6 +27,8 @@ uv tool install bnbingo
 bnbingo --help
 ```
 
+If `bnbingo` is not found after install, add `~/.local/bin` to your `PATH` (run `uv tool update-shell` and open a new shell). To replace an existing install with the current release, use `uv tool upgrade bnbingo` (or `uv tool install --force bnbingo`) — plain `uv tool install` is a no-op when already installed.
+
 `uvx bnbingo --help` runs it without installing. Alternatives: `pipx install bnbingo`, or a venv with `python3 -m venv .venv && . .venv/bin/activate && pip install bnbingo`. Prefer a venv or tool installer over a global `pip install`.
 
 From a source checkout:
