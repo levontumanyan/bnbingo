@@ -1,6 +1,15 @@
 import json
 
-from bnbingo.fetcher import get_listing_details, search_listings
+from bnbingo import fetcher
+from bnbingo.fetcher import get_listing_details, search_listings, set_session_cookie
+
+
+def test_set_session_cookie_parses_cookie_pairs(mocker):
+	mocker.patch.object(fetcher, "AIRBNB_COOKIE", None)
+	mocker.patch.object(fetcher, "ACTIVE_COOKIES_DICT", {})
+	set_session_cookie(" a=1; b=two=three; bare")
+	assert fetcher.AIRBNB_COOKIE == "a=1; b=two=three; bare"
+	assert fetcher.ACTIVE_COOKIES_DICT == {"a": "1", "b": "two=three"}
 
 
 def test_get_listing_details_cache_hit(mocker, tmp_path):

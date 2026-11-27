@@ -36,9 +36,53 @@ def resolve_price_filters(min_nightly, max_nightly, min_total, max_total, num_ni
 	return min_total or 0, max_total or 0, "total"
 
 
+def within_price_bounds(total, min_price, max_price):
+	"""Enforce a requested budget on the price actually fetched from Airbnb.
+
+	Airbnb's whole-stay filter is loose, so server-side caps alone can return
+	listings above the requested range. A missing price (0) is left alone so an
+	unavailable exact price does not silently drop a listing.
+	"""
+	if not total or total <= 0:
+		return True
+	if min_price and total < min_price:
+		return False
+	if max_price and total > max_price:
+		return False
+	return True
+
+
+def filter_by_bounds(listings, min_price, max_price):
+	if not min_price and not max_price:
+		return listings
+	return [
+		item
+		for item in listings
+		if within_price_bounds(item.get("total_price", 0), min_price, max_price)
+	]
+
+
+def parse_cities(raw):
+	"""Split a survey city list without breaking 'City, Country' names.
+
+	Semicolons are the explicit city separator. Without them, pairs of
+	comma-separated tokens are treated as 'City, Country' entries; a single
+	pair is always one city.
+	"""
+	if ";" in raw:
+		return [c.strip() for c in raw.split(";") if c.strip()]
+	parts = [c.strip() for c in raw.split(",") if c.strip()]
+	if len(parts) <= 2:
+		return [", ".join(parts)] if parts else []
+	if len(parts) % 2 == 0:
+		return [f"{parts[i]}, {parts[i + 1]}" for i in range(0, len(parts), 2)]
+	paired = [f"{parts[i]}, {parts[i + 1]}" for i in range(0, len(parts) - 1, 2)]
+	paired.append(parts[-1])
+	return paired
+
+
 def run_survey(args, defaults, search_amenities, logger):
-	delimiter = ";" if ";" in args.cities else ","
-	raw_cities = [c.strip() for c in args.cities.split(delimiter) if c.strip()]
+	raw_cities = parse_cities(args.cities)
 	if not raw_cities:
 		logger.error("No cities provided for survey.")
 		return
@@ -46,6 +90,13 @@ def run_survey(args, defaults, search_amenities, logger):
 	d1 = datetime.strptime(args.check_in, "%Y-%m-%d")
 	d2 = datetime.strptime(args.check_out, "%Y-%m-%d")
 	num_nights = max(1, (d2 - d1).days)
+	survey_min, survey_max, _ = resolve_price_filters(
+		args.min_nightly,
+		args.max_nightly,
+		args.min_total,
+		args.max_total,
+		num_nights,
+	)
 
 	survey_results = []
 	if not args.json:
@@ -94,7 +145,7 @@ def run_survey(args, defaults, search_amenities, logger):
 			except (ValueError, TypeError):
 				continue
 
-			if amt_float > 0:
+			if amt_float > 0 and within_price_bounds(amt_float, survey_min, survey_max):
 				prices.append(amt_float)
 				if orig_float > amt_float:
 					discounts.append(((orig_float - amt_float) / orig_float) * 100)
@@ -133,7 +184,7 @@ def run_survey(args, defaults, search_amenities, logger):
 
 			res = {
 				"city": city,
-				"total_found": len(listings),
+				"total_found": len(prices),
 				"qualified_count": len(qualified_prices),
 				"median_total": med,
 				"mean_total": mean_val,
@@ -318,7 +369,7 @@ def main():
 		"--cities",
 		type=str,
 		default="Buenos Aires, Argentina; Guadalajara, Mexico; Córdoba, Argentina; Arequipa, Peru",
-		help="Semicolon- or comma-separated list of cities to sweep when running in --survey mode",
+		help="Cities to sweep in --survey mode; separate cities with ';' (commas inside a city name like 'Lisbon, Portugal' are preserved)",
 	)
 	parser.add_argument(
 		"--min_rating",
@@ -1025,6 +1076,14 @@ def main():
 				)
 			details["price"] = lp
 
+			if not within_price_bounds(
+				lp.get("amount", 0), api_min_price, api_max_price
+			):
+				logger.info(
+					f"  Skipping {listing_id}: fetched total {lp.get('amount')} {args.currency} is outside requested range {api_min_price}-{api_max_price}"
+				)
+				continue
+
 			wifi_info = scorer.detect_fast_wifi(details)
 			review_evidence = scorer.extract_review_evidence(details)
 
@@ -1106,6 +1165,10 @@ def main():
 					final_listings = json.load(f)
 			except Exception:
 				final_listings = scored_results
+
+			final_listings = filter_by_bounds(
+				final_listings, api_min_price, api_max_price
+			)
 
 			if args.compact:
 				final_listings = [compact_listing(item) for item in final_listings]

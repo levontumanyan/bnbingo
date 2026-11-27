@@ -79,7 +79,7 @@ bnbingo --location "Lisbon, Portugal" --check_in 2027-01-10 --check_out 2027-01-
 # Whole-stay budget cap, sent as-is
 bnbingo --location "Arequipa, Peru" --check_in 2027-01-11 --check_out 2027-02-08 --max_total 1200
 
-# Multi-city survey
+# Multi-city survey (separate cities with ';'; commas inside city names are kept)
 bnbingo --survey --cities "Lima, Peru;Buenos Aires, Argentina" --check_in 2027-03-01 --check_out 2027-03-29
 
 # Inspect one listing
@@ -93,13 +93,13 @@ bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json
 
 # Price filter semantics
 
-Airbnb's search API applies `price_max` to a whole-stay figure, so nightly caps are multiplied by the number of nights before being sent. In practice Airbnb's server-side filter is loose: listings above the requested cap can still be returned, and the exact price shown in a report includes fees that the filter appears to ignore.
+Airbnb's search API applies `price_max` to a whole-stay figure, so nightly caps are multiplied by the number of nights before being sent. Its server-side filter is loose, though: listings above the requested cap can still come back. `bnbingo` therefore re-checks the fetched exact total against the requested range and skips listings outside it, in both search and survey mode. Listings whose exact price could not be fetched are kept (their search-API estimate is used) rather than dropped silently.
 
-Treat price flags as a search hint, not a guarantee — check the reported per-night and total prices, especially before publishing a search as a "budget" result. Enforcing caps client-side on the fetched exact price is planned.
+Price caps apply to the whole-stay total including fees. A listing with a missing price is not counted against the cap.
 
 # Reports and cache
 
-Reports (CSV/JSON), cached listings, and logs live in the data directory (source checkout root, `BNBINGO_HOME`, or `~/.local/share/bnbingo`) and are gitignored. Cookies live in the config directory and are never tracked.
+Reports (CSV/JSON), cached listings, and logs live in the data directory (source checkout root, `BNBINGO_HOME`, or `~/.local/share/bnbingo`) and are gitignored. Reports merge across runs for the same location and dates; `--json` output is filtered by the current run's price caps, so older over-budget rows do not appear as results. Cookies live in the config directory and are never tracked.
 
 # MCP wrapper (roadmap)
 

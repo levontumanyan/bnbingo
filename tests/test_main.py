@@ -1,4 +1,13 @@
-from bnbingo.main import resolve_price_filters
+import logging
+from types import SimpleNamespace
+
+from bnbingo.main import (
+	filter_by_bounds,
+	parse_cities,
+	resolve_price_filters,
+	run_survey,
+	within_price_bounds,
+)
 
 
 def test_nightly_is_scaled_by_stay_length():
@@ -22,3 +31,74 @@ def test_no_price_flags_means_no_filter():
 
 def test_nightly_family_takes_precedence():
 	assert resolve_price_filters(20, 45, 100, 1600, 28) == (560, 1260, "nightly")
+
+
+def test_within_price_bounds():
+	assert within_price_bounds(100, 0, 200)
+	assert not within_price_bounds(201, 0, 200)
+	assert not within_price_bounds(99, 100, 200)
+	assert within_price_bounds(150, 0, 0)
+	assert within_price_bounds(0, 100, 200)
+
+
+def test_filter_by_bounds_drops_stale_over_budget_rows():
+	rows = [{"total_price": 900}, {"total_price": 1500}, {"total_price": 0}]
+	assert filter_by_bounds(rows, 0, 1000) == [rows[0], rows[2]]
+	assert filter_by_bounds(rows, 0, 0) == rows
+
+
+def test_parse_cities_keeps_city_country_names():
+	assert parse_cities("Lisbon, Portugal") == ["Lisbon, Portugal"]
+	assert parse_cities("Porto,Portugal") == ["Porto, Portugal"]
+	assert parse_cities("Lima") == ["Lima"]
+	assert parse_cities("") == []
+
+
+def test_parse_cities_splits_explicit_and_paired_lists():
+	assert parse_cities("Lima, Peru; Buenos Aires, Argentina") == [
+		"Lima, Peru",
+		"Buenos Aires, Argentina",
+	]
+	assert parse_cities("Lima, Peru,Buenos Aires, Argentina") == [
+		"Lima, Peru",
+		"Buenos Aires, Argentina",
+	]
+	assert parse_cities("Lima, Peru, Porto") == ["Lima, Peru", "Porto"]
+
+
+def test_survey_enforces_price_cap(monkeypatch):
+	def item(total):
+		return {
+			"price": {"unit": {"amount": total}},
+			"rating": {"value": 5, "reviewCount": 100},
+		}
+
+	monkeypatch.setattr(
+		"bnbingo.main.get_city_coords",
+		lambda city: {"ne_lat": 1, "sw_lat": 0, "ne_long": 1, "sw_long": 0},
+	)
+	monkeypatch.setattr(
+		"bnbingo.main.search_listings", lambda *args, **kwargs: [item(100), item(500)]
+	)
+	captured = {}
+	monkeypatch.setattr(
+		"bnbingo.main.generate_survey_report",
+		lambda results, **kwargs: captured.update(results=results),
+	)
+	args = SimpleNamespace(
+		cities="Test City, Nowhere",
+		check_in="2027-01-10",
+		check_out="2027-01-24",
+		currency="CAD",
+		place_type="Entire home/apt",
+		json=False,
+		min_rating=4.7,
+		min_reviews=10,
+		min_nightly=None,
+		max_nightly=None,
+		min_total=None,
+		max_total=200,
+	)
+	run_survey(args, {}, [], logging.getLogger("bnbingo-test"))
+	assert captured["results"][0]["total_found"] == 1
+	assert captured["results"][0]["median_total"] == 100
