@@ -8,6 +8,7 @@
 
 - **CLI Tool**: The primary way to run searches and benchmark listings is the `bnbingo` CLI executable, installed in PATH (`~/.local/bin/bnbingo`). Run `bnbingo --help` for options.
 - **CLI Reinstall Mandate**: The installed CLI is a snapshot of this repo, not a live link. After committing any change under `bnbingo/`, run `uv tool install --force ~/repos/bnbingo` so agents using `bnbingo` execute the updated code; verify with `bnbingo --help` or a single `--room` run before reporting results.
+- **Host Review**: `--host <id|url>` aggregates every listing and review for one host; it accepts numeric IDs and `/h/...`, `/users/...`, `/rooms/...` links.
 - **Scoring Policy**: Benchmarks load from an explicit `--benchmarks PATH`, then `~/.config/bnbingo/benchmarks.json` (`BNBINGO_CONFIG_DIR`), then the packaged default (`bnbingo/benchmarks.json`). A personal `benchmarks.json` must never live in this repo. There is no search-filters config: every search knob is a CLI flag.
 - **Make Targets**: Use `make` commands strictly for development lifecycle tasks: `make format`, `make lint`, and `make test`. Do not create or use a `make run` target.
 

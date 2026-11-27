@@ -84,6 +84,10 @@ bnbingo --room 123456789 --calendar --reviews --check_in 2027-01-10 --check_out 
 
 # Machine-readable output with an explicit scoring policy
 bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json --benchmarks ~/my-benchmarks.json
+
+# Consolidated review of a host: every listing, every review
+bnbingo --host 482816256 --check_in 2027-01-10 --check_out 2027-02-07
+bnbingo --host "https://www.airbnb.ca/h/premium-bed-by-olvia-full-equipped-2" --check_in 2027-01-10 --check_out 2027-02-07 --json --compact
 ```
 
 `--min_price` / `--max_price` are deprecated aliases for the nightly flags and print a warning.
@@ -91,6 +95,10 @@ bnbingo --location "Valparaíso, Chile" --limit 10 --compact --json --benchmarks
 # Search completeness
 
 A city search geocodes the city name to its administrative bounding box and pages through every listing inside it. Airbnb caps the number of pages it will serve per query, so in dense markets the sweep stops early (`SearchResultsTruncatedWarning`) and listings in any neighborhood — not a specific one — can be missed. Pass `--complete` to subdivide the bounding box until every page fits; it is slower and uses many more requests, but avoids the cap. If the subdivision budget is exhausted, the partial results are still returned with a warning.
+
+# Host review
+
+`--host` accepts a numeric host ID or an Airbnb `/h/...`, `/users/...`, or `/rooms/...` URL. It enumerates every listing owned by that host, fetches all reviews across them, and prints a per-listing breakdown (with full `airbnb.ca` links and CAD total + nightly prices), overall rating distribution, total review count cross-checked against the listing counts, review date range, and recurring praise/issue themes. Listings whose house rules or description restrict visitors are flagged. `--json` keeps the whole report machine-readable; `--compact` drops the individual review texts.
 
 # Price filter semantics
 
